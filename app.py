@@ -1,37 +1,67 @@
 import streamlit as st
 import pandas as pd
-from sensores import generar_datos
+import time
+from sensores import generar_planta
 
-st.set_page_config(page_title="Planta Inteligente")
+st.set_page_config(
+    page_title="Planta Inteligente",
+    layout="wide"
+)
+
 st.title("sistema inteligente de monitoreo industrial")
-st.write("Sistema industrial funcionando")
 
-#obter datos
-datos = generar_datos()
+placeholder = st.empty()
 
-temperatura = datos["temperatura"]
-vibracion = datos["vibracion"]
-rpm = datos["rpm"]
+while True:
+    with placeholder.container():
+        planta = generar_planta()
 
-#mostrar metricas
-col1, col2, col3 = st.columns(3)
+        for maquina in planta:
+            st.subheader(maquina["nombre"])
 
-col1.metric("Temperatura (°C)", temperatura)
-col2.metric("Vibración", vibracion)
-col3.metric("RPM", rpm)
+            col1, col2, col3, col4 = st.columns(4)
 
-#alertas 
-if temperatura > 85:
-    st.error("Alerta: Sobrecalentamiento detectado!")
+            col1.metric(
+                "Temperatura",
+                f"{maquina['temperatura']} °C"
+                )
+            
+            col2.metric(
+                "Vibración",
+                maquina['vibracion']
+                )
+            
+            col3.metric(
+                "RPM",
+                maquina['rpm']
+                )
 
-if vibracion > 2.0:
-    st.warning("Alerta: Vibración elevada!")
+            col4.metric(
+                "Estado",
+                maquina['estado']
+                )
 
-#historial
-df = pd.DataFrame({
-    "temperatura": [temperatura],
-    "vibracion": [vibracion],
-    "rpm": [rpm]
-})
+            #alertas
+            if maquina["temperatura"] > 85:
+                st.error(f"{maquina['nombre']} está sobrecalentada!"
+                )
 
-st.line_chart(df)
+            elif maquina["vibracion"] > 2.0:
+                st.warning(f"{maquina['nombre']} tiene vibración excesiva!"
+                )
+
+            else:
+                st.success(f"{maquina['nombre']} está funcionando normalmente."
+                )
+            
+            #datos graficos
+            df = pd.DataFrame({
+                "temperatura": [maquina["temperatura"]],
+                "vibracion": [maquina["vibracion"]],
+                "rpm": [maquina["rpm"]]
+            })
+
+            st.line_chart(df)
+
+            st.divider()
+    time.sleep(2)

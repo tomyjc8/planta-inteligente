@@ -1,8 +1,10 @@
 import streamlit as st
 import pandas as pd
 import time
+import os
 from sensores import generar_planta
 from logger import guardar_datos
+
 
 st.set_page_config(
     page_title="Planta Inteligente",
@@ -11,11 +13,71 @@ st.set_page_config(
 
 st.title("sistema inteligente de monitoreo industrial")
 
+if os.path.exists("datos/historial.csv"):
+
+    historial = pd.read_csv("datos/historial.csv")
+    
+    temp_promedio = round(historial["temperatura"].mean(), 1)
+    vib_promedio = round(historial["vibracion"].mean(), 2)
+    rpm_promedio = round(historial["rpm"].mean(), 0)
+
+    kpi1, kpi2, kpi3 = st.columns(3)
+
+    kpi1.metric(
+        "Temperatura Promedio",
+        f"{temp_promedio} °C"
+    )
+
+    kpi2.metric(
+        "Vibración Promedio",
+        vib_promedio
+    )
+
+    kpi3.metric(
+        "RPM Promedio",
+        rpm_promedio
+    )
+
 placeholder = st.empty()
 
 while True:
     with placeholder.container():
         planta = generar_planta()
+
+        tabla_planta = pd.DataFrame(planta)
+
+        st.subheader("Estado General de la Planta")
+
+        st.dataframe(
+            tabla_planta,
+            use_container_width=True
+        )
+
+        if os.path.exists("datos/historial.csv"):
+            
+            historial = pd.read_csv("datos/historial.csv")
+
+            alarmas = len(
+                historial[
+                    (historial["estado"] != "normal")
+                ]   
+            )
+
+            st.metric(
+                "Alarmas Registradas",
+                alarmas
+            )
+            
+            st.subheader("Historico de Temperatura")
+
+            st.line_chart(
+                historial["temperatura"].tail(100)
+            )
+            st.subheader("Historico de Vibración")
+
+            st.line_chart(
+                historial["vibracion"].tail(100)
+            )
 
         guardar_datos(planta)
 

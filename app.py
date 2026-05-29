@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import time
 from sensores import generar_planta
+from logger import guardar_datos
 
 st.set_page_config(
     page_title="Planta Inteligente",
@@ -15,6 +16,8 @@ placeholder = st.empty()
 while True:
     with placeholder.container():
         planta = generar_planta()
+
+        guardar_datos(planta)
 
         for maquina in planta:
             st.subheader(maquina["nombre"])
